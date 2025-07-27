@@ -1,0 +1,136 @@
+definitions:
+  dtos.ResourceStatus:
+    properties:
+      status:
+        type: string
+      uri:
+        type: string
+    type: object
+  dtos.State:
+    properties:
+      archive:
+        type: string
+      resource_statuses:
+        items:
+          $ref: '#/definitions/dtos.ResourceStatus'
+        type: array
+      status:
+        type: string
+    type: object
+  dtos.Task:
+    properties:
+      id:
+        type: string
+      state:
+        $ref: '#/definitions/dtos.State'
+    type: object
+  handlers.AddResourceRequest:
+    properties:
+      resource_uri:
+        type: string
+    type: object
+  handlers.CreateTaskResponse:
+    properties:
+      id:
+        type: string
+    type: object
+  handlers.ListResponse:
+    properties:
+      tasks:
+        items:
+          $ref: '#/definitions/dtos.Task'
+        type: array
+    type: object
+info:
+  contact: {}
+  description: This is a sample server Petstore server.
+  title: Swagger Example API
+  version: "1.0"
+paths:
+  /api/v1/tasks:
+    get:
+      description: Get a list of all tasks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ListResponse'
+      summary: List all tasks
+      tags:
+      - tasks
+    post:
+      description: Creates a new task and returns the task ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CreateTaskResponse'
+      summary: Create a new task
+      tags:
+      - tasks
+  /api/v1/tasks/{id}:
+    get:
+      description: Gets task state by ID, if number resources == X, archives resources
+        and returns archive link
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Gets task state
+      tags:
+      - tasks
+  /api/v1/tasks/{id}/resources:
+    post:
+      description: Adds resource to a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ResourceURI object
+        in: body
+        name: resource
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AddResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Adds resource to a task
+      tags:
+      - tasks
+swagger: "2.0"

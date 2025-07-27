@@ -1,0 +1,11 @@
+{
+  "port": 8080,
+  "num_workers": 3,
+  "num_max_tasks": 3,
+  "num_max_resources_per_task": 3,
+  "file_extension_white_list": [
+    ".pdf",
+    ".jpeg"
+  ],
+  "file_dir": "appdata"
+}
