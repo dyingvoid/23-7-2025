@@ -114,8 +114,8 @@ func (ts *TaskService) GetTaskStatus(
 	}
 
 	taskDTO := dtos.Task{
-		ID:     task.ID.String(),
-		Status: dtos.NewTaskStatus(urlBuilder, task),
+		ID:    task.ID.String(),
+		State: dtos.NewTaskStatus(urlBuilder, task),
 	}
 	return taskDTO, nil
 }
@@ -140,8 +140,8 @@ func toDtos(
 
 		out = append(
 			out, dtos.Task{
-				ID:     task.ID.String(),
-				Status: dtos.NewTaskStatus(urlBuilder, task),
+				ID:    task.ID.String(),
+				State: dtos.NewTaskStatus(urlBuilder, task),
 			},
 		)
 	}

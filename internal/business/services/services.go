@@ -11,7 +11,7 @@ type Services struct {
 }
 
 func New(i *interfaces.Interfaces, opts options.TaskOptions) *Services {
-	resourceService := NewResourceService(i.HTTPClient, opts.FileDir)
+	resourceService := NewResourceService(i.HTTPClient)
 	archiveService := NewArchiveService(i.Archiver, resourceService, opts.FileDir)
 	return &Services{
 		Task:           NewTaskService(opts, archiveService),

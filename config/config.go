@@ -13,7 +13,6 @@ type Config struct {
 	FileDir                string   `json:"file_dir"`
 }
 
-// TODO add paths
 func RequireConfig(env string) *Config {
 	f, err := os.Open("configs/config." + env + ".json")
 	if err != nil {

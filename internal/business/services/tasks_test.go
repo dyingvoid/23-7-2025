@@ -94,19 +94,19 @@ func TestGetTaskStatus_Archive(t *testing.T) {
 	err = ts.AddResource(id, makeResource("b.pdf"))
 	assert.NoError(t, err)
 
-	mockArchive.On("ArchiveURI", mock.Anything).Return("archive/path", nil)
+	mockArchive.On("Archive", mock.Anything).Return("archive/path", nil)
 
-	status, err := ts.GetTaskStatus(id)
+	task, err := ts.GetTaskStatus(urlBuilder, id)
 	assert.NoError(t, err)
-	assert.Equal(t, entities.StatusArchived.String(), status.Status)
-	mockArchive.AssertCalled(t, "ArchiveURI", mock.Anything)
+	assert.Equal(t, entities.StatusArchived.String(), task.State.Status)
+	mockArchive.AssertCalled(t, "Archive", mock.Anything)
 }
 
 func TestGetTaskStatus_NotFound(t *testing.T) {
 	mockArchive := new(MockArchiveServicer)
 	ts := NewTaskService(makeOptions(), mockArchive)
 
-	_, err := ts.GetTaskStatus(uuid.New())
+	_, err := ts.GetTaskStatus(urlBuilder, uuid.New())
 	assert.Error(t, err)
 	assert.IsType(t, &apperrors.NotFoundError{}, err)
 }
@@ -119,10 +119,10 @@ func TestGetTaskStatus_ArchiveFail(t *testing.T) {
 
 	_ = ts.AddResource(id, makeResource("a.jpeg"))
 	_ = ts.AddResource(id, makeResource("b.jpeg"))
-	mockArchive.On("ArchiveURI", mock.Anything).
+	mockArchive.On("Archive", mock.Anything).
 		Return("", errors.New("fail"))
 
-	_, err := ts.GetTaskStatus(id)
+	_, err := ts.GetTaskStatus(urlBuilder, id)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to archive task")
 }
@@ -140,16 +140,16 @@ func TestList_ReturnsActiveAndArchivedTasks(t *testing.T) {
 	assert.NoError(t, err)
 	err = ts.AddResource(id, makeResource("b.pdf"))
 	assert.NoError(t, err)
-	mockArchive.On("ArchiveURI", mock.Anything).
+	mockArchive.On("Archive", mock.Anything).
 		Return("archive/path", nil)
-	_, _ = ts.GetTaskStatus(id) // Moves to archived
+	_, _ = ts.GetTaskStatus(urlBuilder, id) // Moves to archived
 
-	tasks := ts.List()
+	tasks := ts.List(urlBuilder)
 
 	assert.Len(t, tasks, 2)
 	hasArchived := false
 	for _, task := range tasks {
-		if task.Status.Status == entities.StatusArchived.String() {
+		if task.State.Status == entities.StatusArchived.String() {
 			hasArchived = true
 		}
 	}
@@ -160,8 +160,8 @@ type MockArchiveServicer struct {
 	mock.Mock
 }
 
-func (m *MockArchiveServicer) ArchivePath(task *entities.Task) string {
-	args := m.Called(task)
+func (m *MockArchiveServicer) ArchivePath(taskID uuid.UUID) string {
+	args := m.Called(taskID)
 	return args.String(0)
 }
 
@@ -176,6 +176,10 @@ func makeOptions() options.TaskOptions {
 		MaxNumResources:       2,
 		AllowedFileExtensions: map[string]struct{}{".jpeg": {}, ".pdf": {}},
 	}
+}
+
+func urlBuilder(taskID uuid.UUID) string {
+	return ""
 }
 
 func makeResource(uri string) entities.Resource {

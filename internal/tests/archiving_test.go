@@ -17,7 +17,7 @@ func TestArchiving(t *testing.T) {
 	tempDir := t.TempDir()
 	zipArchiver := infrastructure.NewZipArchiver()
 	client := infrastructure.NewHTTPClient()
-	resourceService := services.NewResourceService(client, tempDir)
+	resourceService := services.NewResourceService(client)
 	archiveService := services.NewArchiveService(zipArchiver, resourceService, tempDir)
 
 	t.Run(

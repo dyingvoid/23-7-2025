@@ -10,7 +10,7 @@ type ResourceService struct {
 	client interfaces.HTTPClienter
 }
 
-func NewResourceService(client interfaces.HTTPClienter, filedir string) *ResourceService {
+func NewResourceService(client interfaces.HTTPClienter) *ResourceService {
 	return &ResourceService{
 		client: client,
 	}
