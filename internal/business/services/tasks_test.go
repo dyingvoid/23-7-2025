@@ -31,7 +31,7 @@ func TestCreateTask_TooManyTasks(t *testing.T) {
 	assert.NoError(t, err1)
 	_, err2 := ts.CreateTask()
 	assert.Error(t, err2)
-	assert.IsType(t, &apperrors.BusinessRuleViolationError{}, err2)
+	assert.IsType(t, &apperrors.AppError{}, err2)
 }
 
 func TestAddResource_ValidResource(t *testing.T) {
@@ -56,7 +56,7 @@ func TestAddResource_DisallowedExtension(t *testing.T) {
 
 	err := ts.AddResource(id, resource)
 	assert.Error(t, err)
-	assert.IsType(t, &apperrors.BusinessRuleViolationError{}, err)
+	assert.IsType(t, &apperrors.AppError{}, err)
 }
 
 func TestAddResource_UnknownTask(t *testing.T) {
@@ -79,7 +79,7 @@ func TestAddResource_MaxResources(t *testing.T) {
 	_ = ts.AddResource(id, makeResource("b.jpg"))
 	err := ts.AddResource(id, makeResource("c.jpg"))
 	assert.Error(t, err)
-	assert.IsType(t, &apperrors.BusinessRuleViolationError{}, err)
+	assert.IsType(t, &apperrors.AppError{}, err)
 }
 
 func TestGetTaskStatus_Archive(t *testing.T) {
@@ -94,12 +94,12 @@ func TestGetTaskStatus_Archive(t *testing.T) {
 	err = ts.AddResource(id, makeResource("b.pdf"))
 	assert.NoError(t, err)
 
-	mockArchive.On("Archive", mock.Anything).Return("archive/path", nil)
+	mockArchive.On("ArchiveURI", mock.Anything).Return("archive/path", nil)
 
 	status, err := ts.GetTaskStatus(id)
 	assert.NoError(t, err)
 	assert.Equal(t, entities.StatusArchived.String(), status.Status)
-	mockArchive.AssertCalled(t, "Archive", mock.Anything)
+	mockArchive.AssertCalled(t, "ArchiveURI", mock.Anything)
 }
 
 func TestGetTaskStatus_NotFound(t *testing.T) {
@@ -119,7 +119,7 @@ func TestGetTaskStatus_ArchiveFail(t *testing.T) {
 
 	_ = ts.AddResource(id, makeResource("a.jpeg"))
 	_ = ts.AddResource(id, makeResource("b.jpeg"))
-	mockArchive.On("Archive", mock.Anything).
+	mockArchive.On("ArchiveURI", mock.Anything).
 		Return("", errors.New("fail"))
 
 	_, err := ts.GetTaskStatus(id)
@@ -140,7 +140,7 @@ func TestList_ReturnsActiveAndArchivedTasks(t *testing.T) {
 	assert.NoError(t, err)
 	err = ts.AddResource(id, makeResource("b.pdf"))
 	assert.NoError(t, err)
-	mockArchive.On("Archive", mock.Anything).
+	mockArchive.On("ArchiveURI", mock.Anything).
 		Return("archive/path", nil)
 	_, _ = ts.GetTaskStatus(id) // Moves to archived
 

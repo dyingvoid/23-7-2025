@@ -2,21 +2,25 @@ package dtos
 
 import (
 	"23-7-2025/internal/entities"
+	"github.com/google/uuid"
 )
 
 type State struct {
 	Status           string           `json:"status"`
-	Archive          string           `json:"archive"`
+	ArchiveURI       string           `json:"archive_uri,omitempty"`
 	ResourceStatuses []ResourceStatus `json:"resource_statuses"`
 }
 
-func NewTaskStatus(t *entities.Task) State {
+func NewTaskStatus(
+	urlBuilder func(taskID uuid.UUID) string,
+	t *entities.Task,
+) State {
 	status := State{
 		Status:           t.Status.String(),
 		ResourceStatuses: GetTaskResourceStatuses(t),
 	}
 	if t.Status == entities.StatusArchived {
-		status.Archive = t.ArchivePath
+		status.ArchiveURI = urlBuilder(t.ID)
 	}
 
 	return status
@@ -28,16 +32,16 @@ type ResourceStatus struct {
 }
 
 func NewResourceStatus(r entities.Resource) ResourceStatus {
-	if !r.Downloaded {
-		return ResourceStatus{
-			URI:    r.URI,
-			Status: "pending",
-		}
-	}
 	if r.Error != nil {
 		return ResourceStatus{
 			URI:    r.URI,
 			Status: "error",
+		}
+	}
+	if !r.Downloaded {
+		return ResourceStatus{
+			URI:    r.URI,
+			Status: "pending",
 		}
 	}
 	return ResourceStatus{

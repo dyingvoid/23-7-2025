@@ -1,16 +1,29 @@
 package handlers
 
 import (
+	"23-7-2025/internal/business/apperrors"
 	"23-7-2025/internal/business/dtos"
 	"23-7-2025/internal/business/services"
 	"23-7-2025/internal/entities"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"os"
 )
 
 type TasksHandler struct {
-	taskService *services.TaskService
+	taskService    *services.TaskService
+	archiveService services.ArchiveServicer
+}
+
+func NewTasksHandler(
+	taskService *services.TaskService, archiveService services.ArchiveServicer,
+) *TasksHandler {
+	return &TasksHandler{
+		taskService:    taskService,
+		archiveService: archiveService,
+	}
 }
 
 type ListResponse struct {
@@ -25,7 +38,13 @@ type ListResponse struct {
 // @Success 200 {object} ListResponse
 // @Router /api/v1/tasks [get]
 func (th *TasksHandler) ListTasks(c echo.Context) error {
-	tasks := th.taskService.List()
+	urlBuilder := func(taskID uuid.UUID) string {
+		return fmt.Sprintf(
+			"%s://%s/api/v1/tasks/%s/archive",
+			c.Scheme(), c.Request().Host, taskID,
+		)
+	}
+	tasks := th.taskService.List(urlBuilder)
 	return c.JSON(
 		http.StatusOK, ListResponse{
 			Tasks: tasks,
@@ -43,6 +62,7 @@ type CreateTaskResponse struct {
 // @Tags tasks
 // @Produce json
 // @Success 200 {object} CreateTaskResponse
+// @Failure 400 {object} map[string]string
 // @Router /api/v1/tasks [post]
 func (th *TasksHandler) CreateTask(c echo.Context) error {
 	id, err := th.taskService.CreateTask()
@@ -71,6 +91,7 @@ type GetTaskResponse struct {
 // @Param id path string true "Task ID"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
 // @Router /api/v1/tasks/{id} [get]
 func (th *TasksHandler) GetTask(c echo.Context) error {
 	req := new(GetTaskRequest)
@@ -81,7 +102,14 @@ func (th *TasksHandler) GetTask(c echo.Context) error {
 	if err != nil {
 		return badRequest(c, err)
 	}
-	task, err := th.taskService.GetTaskStatus(taskID)
+
+	urlBuilder := func(taskID uuid.UUID) string {
+		return fmt.Sprintf(
+			"%s://%s/api/v1/tasks/%s/archive",
+			c.Scheme(), c.Request().Host, taskID,
+		)
+	}
+	task, err := th.taskService.GetTaskStatus(urlBuilder, taskID)
 	if err != nil {
 		return err
 	}
@@ -106,6 +134,7 @@ type AddResourceRequest struct {
 // @Param resource body AddResourceRequest true "ResourceURI object"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
 // @Router /api/v1/tasks/{id}/resources [post]
 func (th *TasksHandler) AddResource(c echo.Context) error {
 	req := new(AddResourceRequest)
@@ -121,17 +150,47 @@ func (th *TasksHandler) AddResource(c echo.Context) error {
 		taskID, entities.NewResource(req.ResourceURI),
 	)
 	if err != nil {
-		return c.JSON(
-			http.StatusInternalServerError, map[string]string{
-				"error": err.Error(),
-			},
-		)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{})
 }
 
-// TODO to utils
+type GetArchiveRequest struct {
+	TaskID string `param:"id"`
+}
+
+// GetArchive
+// @Summary Gets the task's archive
+// @Description Get the task's archive by id
+// @Tags tasks
+// @Produce json
+// @Param id path string true "Task ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /api/v1/tasks/{id}/archive [get]
+func (th *TasksHandler) GetArchive(c echo.Context) error {
+	req := new(GetArchiveRequest)
+	if err := c.Bind(req); err != nil {
+		return badRequest(c, err)
+	}
+	taskID, err := uuid.Parse(req.TaskID)
+	if err != nil {
+		return badRequest(c, err)
+	}
+
+	archivePath := th.archiveService.ArchivePath(taskID)
+	if _, err := os.Stat(archivePath); err != nil {
+		if os.IsNotExist(err) {
+			return &apperrors.NotFoundError{Msg: "archive not found"}
+		}
+		return err
+	}
+
+	return c.Attachment(archivePath, fmt.Sprintf("%s.zip", req.TaskID))
+}
+
 func badRequest(c echo.Context, err error) error {
 	return c.JSON(
 		http.StatusBadRequest, map[string]string{

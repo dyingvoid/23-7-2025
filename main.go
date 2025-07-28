@@ -9,7 +9,6 @@ import (
 	"23-7-2025/internal/handlers"
 	"23-7-2025/internal/infrastructure"
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 )
@@ -22,24 +21,15 @@ func main() {
 	cfg := config.RequireConfig("dev")
 
 	if cfg.FileDir != "" {
-		// TODO change to more strict later
 		err := os.Mkdir(cfg.FileDir, 0755)
 		if err != nil && !errors.Is(err, os.ErrExist) {
 			panic(err)
 		}
 	}
-
-	fmt.Println(cfg)
-
-	// TODO to config
-	allowed := make(map[string]struct{}, len(cfg.FileExtensionWhiteList))
-	for _, ext := range cfg.FileExtensionWhiteList {
-		allowed[ext] = struct{}{}
-	}
 	opts := options.TaskOptions{
 		MaxNumResources:       3,
 		MaxNumTasks:           3,
-		AllowedFileExtensions: allowed,
+		AllowedFileExtensions: cfg.GetAllowedExtensions(),
 		FileDir:               cfg.FileDir,
 	}
 

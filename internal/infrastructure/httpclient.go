@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"time"
 )
 
 type HTTPClient struct {
@@ -14,7 +15,9 @@ type HTTPClient struct {
 
 func NewHTTPClient() *HTTPClient {
 	return &HTTPClient{
-		client: http.DefaultClient,
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 }
 

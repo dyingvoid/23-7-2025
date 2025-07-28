@@ -1,11 +1,11 @@
 package interfaces
 
 type Interfaces struct {
-	Archiver   Archivator
-	HTTPClient HTTPClient
+	Archiver   Archiver
+	HTTPClient HTTPClienter
 }
 
-func New(archiver Archivator, httpClient HTTPClient) *Interfaces {
+func New(archiver Archiver, httpClient HTTPClienter) *Interfaces {
 	return &Interfaces{
 		Archiver:   archiver,
 		HTTPClient: httpClient,

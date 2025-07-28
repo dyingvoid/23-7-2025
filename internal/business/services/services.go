@@ -14,6 +14,7 @@ func New(i *interfaces.Interfaces, opts options.TaskOptions) *Services {
 	resourceService := NewResourceService(i.HTTPClient, opts.FileDir)
 	archiveService := NewArchiveService(i.Archiver, resourceService, opts.FileDir)
 	return &Services{
-		Task: NewTaskService(opts, archiveService),
+		Task:           NewTaskService(opts, archiveService),
+		ArchiveService: archiveService,
 	}
 }

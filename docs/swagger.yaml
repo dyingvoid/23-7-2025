@@ -8,7 +8,7 @@ definitions:
     type: object
   dtos.State:
     properties:
-      archive:
+      archive_uri:
         type: string
       resource_statuses:
         items:
@@ -69,6 +69,12 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/handlers.CreateTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: Create a new task
       tags:
       - tasks
@@ -97,7 +103,46 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: Gets task state
+      tags:
+      - tasks
+  /api/v1/tasks/{id}/archive:
+    get:
+      description: Get the task's archive by id
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Gets the task's archive
       tags:
       - tasks
   /api/v1/tasks/{id}/resources:
@@ -126,6 +171,12 @@ paths:
             type: object
         "400":
           description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string

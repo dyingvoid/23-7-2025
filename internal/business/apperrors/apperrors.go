@@ -1,10 +1,10 @@
 package apperrors
 
-type BusinessRuleViolationError struct {
+type AppError struct {
 	Msg string
 }
 
-func (e *BusinessRuleViolationError) Error() string {
+func (e *AppError) Error() string {
 	return e.Msg
 }
 
@@ -13,5 +13,13 @@ type NotFoundError struct {
 }
 
 func (e *NotFoundError) Error() string {
+	return e.Msg
+}
+
+type ServerBusyError struct {
+	Msg string
+}
+
+func (e *ServerBusyError) Error() string {
 	return e.Msg
 }

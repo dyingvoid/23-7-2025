@@ -1,6 +1,6 @@
 package interfaces
 
-type Archivator interface {
+type Archiver interface {
 	CreateArchive(archiveName string, dir string) (Archive, error)
 	Extension() string
 }

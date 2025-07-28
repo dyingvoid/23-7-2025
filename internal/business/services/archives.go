@@ -4,23 +4,26 @@ import (
 	"23-7-2025/internal/business/interfaces"
 	"23-7-2025/internal/entities"
 	"fmt"
+	"github.com/google/uuid"
 	"os"
 	"sync"
 )
 
-type ArchiveServicer interface {
-	ArchivePath(task *entities.Task) string
-	Archive(task *entities.Task) (string, error)
-}
+type (
+	ArchiveServicer interface {
+		ArchivePath(taskID uuid.UUID) string
+		Archive(task *entities.Task) (string, error)
+	}
 
-type ArchiveService struct {
-	archiver        interfaces.Archivator
-	resourceService *ResourceService
-	archiveDir      string
-}
+	ArchiveService struct {
+		archiver        interfaces.Archiver
+		resourceService *ResourceService
+		archiveDir      string
+	}
+)
 
 func NewArchiveService(
-	archiver interfaces.Archivator, resourceService *ResourceService, dir string,
+	archiver interfaces.Archiver, resourceService *ResourceService, dir string,
 ) *ArchiveService {
 	return &ArchiveService{
 		archiver:        archiver,
@@ -29,8 +32,8 @@ func NewArchiveService(
 	}
 }
 
-func (as *ArchiveService) ArchivePath(task *entities.Task) string {
-	return as.archiveDir + task.ID.String() + as.archiver.Extension()
+func (as *ArchiveService) ArchivePath(taskID uuid.UUID) string {
+	return as.archiveDir + "/" + taskID.String() + as.archiver.Extension()
 }
 
 func (as *ArchiveService) Archive(task *entities.Task) (string, error) {
@@ -53,8 +56,10 @@ func (as *ArchiveService) Archive(task *entities.Task) (string, error) {
 			defer wg.Done()
 			resource := as.resourceService.DownloadResource(task.Resources[i], tempDir)
 			if resource.Error != nil || !resource.Downloaded {
+				task.Resources[i] = resource
 				return
 			}
+
 			err = archive.AddFile(resource.Filename)
 			if err != nil {
 				resource.Archived = false

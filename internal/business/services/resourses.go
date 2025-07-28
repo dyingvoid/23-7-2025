@@ -7,10 +7,10 @@ import (
 )
 
 type ResourceService struct {
-	client interfaces.HTTPClient
+	client interfaces.HTTPClienter
 }
 
-func NewResourceService(client interfaces.HTTPClient, filedir string) *ResourceService {
+func NewResourceService(client interfaces.HTTPClienter, filedir string) *ResourceService {
 	return &ResourceService{
 		client: client,
 	}

@@ -1,5 +1,5 @@
 package interfaces
 
-type HTTPClient interface {
+type HTTPClienter interface {
 	DownloadFile(uri string, dir string) (string, error)
 }

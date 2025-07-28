@@ -38,20 +38,20 @@ func (ts *TaskService) CreateTask() (uuid.UUID, error) {
 	defer ts.mu.Unlock()
 
 	if len(ts.data) >= ts.options.MaxNumTasks {
-		return uuid.Nil, &apperrors.BusinessRuleViolationError{Msg: "server is busy"}
+		return uuid.Nil, &apperrors.AppError{Msg: "server is busy"}
 	}
 	ts.data[task.ID] = task
 
 	return task.ID, nil
 }
 
-func (ts *TaskService) List() []dtos.Task {
+func (ts *TaskService) List(urlBuilder func(taskID uuid.UUID) string) []dtos.Task {
 	ts.mu.RLock()
 	defer ts.mu.RUnlock()
 
 	tasks := make([]dtos.Task, 0, len(ts.data))
-	tasks = toDtos(tasks, ts.data)
-	tasks = toDtos(tasks, ts.archivedData)
+	tasks = toDtos(urlBuilder, tasks, ts.data)
+	tasks = toDtos(urlBuilder, tasks, ts.archivedData)
 
 	return tasks
 }
@@ -61,7 +61,7 @@ func (ts *TaskService) AddResource(
 ) error {
 	ext := path.Ext(resource.URI)
 	if _, ok := ts.options.AllowedFileExtensions[ext]; !ok {
-		return &apperrors.BusinessRuleViolationError{Msg: "file extension not allowed"}
+		return &apperrors.AppError{Msg: "file extension not allowed"}
 	}
 
 	ts.mu.RLock()
@@ -75,7 +75,7 @@ func (ts *TaskService) AddResource(
 	task.Mu.Lock()
 	defer task.Mu.Unlock()
 	if len(task.Resources) >= ts.options.MaxNumResources {
-		return &apperrors.BusinessRuleViolationError{
+		return &apperrors.AppError{
 			Msg: fmt.Sprintf(
 				"task max number resources reached, %d", ts.options.MaxNumResources,
 			),
@@ -86,7 +86,10 @@ func (ts *TaskService) AddResource(
 	return nil
 }
 
-func (ts *TaskService) GetTaskStatus(taskID uuid.UUID) (dtos.Task, error) {
+func (ts *TaskService) GetTaskStatus(
+	urlBuilder func(taskID uuid.UUID) string,
+	taskID uuid.UUID,
+) (dtos.Task, error) {
 	ts.mu.RLock()
 	task, ok := ts.getTask(taskID)
 	ts.mu.RUnlock()
@@ -112,7 +115,7 @@ func (ts *TaskService) GetTaskStatus(taskID uuid.UUID) (dtos.Task, error) {
 
 	taskDTO := dtos.Task{
 		ID:     task.ID.String(),
-		Status: dtos.NewTaskStatus(task),
+		Status: dtos.NewTaskStatus(urlBuilder, task),
 	}
 	return taskDTO, nil
 }
@@ -127,7 +130,10 @@ func (ts *TaskService) getTask(id uuid.UUID) (*entities.Task, bool) {
 	return task, ok
 }
 
-func toDtos(out []dtos.Task, tasks map[uuid.UUID]*entities.Task) []dtos.Task {
+func toDtos(
+	urlBuilder func(taskID uuid.UUID) string,
+	out []dtos.Task, tasks map[uuid.UUID]*entities.Task,
+) []dtos.Task {
 	for _, task := range tasks {
 		task.Mu.RLock()
 		task.Mu.RUnlock()
@@ -135,7 +141,7 @@ func toDtos(out []dtos.Task, tasks map[uuid.UUID]*entities.Task) []dtos.Task {
 		out = append(
 			out, dtos.Task{
 				ID:     task.ID.String(),
-				Status: dtos.NewTaskStatus(task),
+				Status: dtos.NewTaskStatus(urlBuilder, task),
 			},
 		)
 	}
